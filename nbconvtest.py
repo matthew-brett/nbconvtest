@@ -7,27 +7,21 @@ from os.path import join as pjoin, split as psplit, abspath, dirname
 
 from IPython.config import Config
 from IPython.nbconvert.exporters import HTMLExporter
-from nbviewer.render import render_notebook
-from nbviewer.utils import ipython_info
+from IPython.nbformat.current import reads_json
 from jinja2 import Environment, FileSystemLoader
-import markdown
 
 # Jinja2 config
 here = dirname(__file__)
 template_path = pjoin(here, 'templates')
 j2_env = Environment(loader=FileSystemLoader(template_path))
-j2_env.filters['markdown'] = markdown.markdown
-git_data = {}
-def nrhead():
-    return ''
-def nrfoot():
-    return ''
-j2_env.globals.update(nrhead=nrhead, nrfoot=nrfoot, git_data=git_data,
-                      ipython_info=ipython_info()
+j2_env.globals.update(
                      )
 
+def render_notebook(exporter, json_notebook):
+    nb = reads_json(json_notebook)
+    return exporter.from_notebook_node(nb)
 
-def export_notebook(nbjson):
+def export_notebook(nbjson, **kwargs):
     # NBConvert config
     config = Config()
     config.HTMLExporter.template_file = 'basic'
@@ -39,22 +33,57 @@ def export_notebook(nbjson):
     download_url = None
     home_url = None
 
-    nbhtml, nbconfig = render_notebook(exporter, nbjson)
+    nbhtml, resources = render_notebook(exporter, nbjson)
 
     from datetime import datetime
     date_fmt = "%a, %d %h %Y %H:%M:%S UTC"
-
-    nbconfig.update(body=nbhtml, download_url=download_url, home_url=home_url,
-                    date=datetime.utcnow().strftime(date_fmt))
-    template = j2_env.get_template('notebook.html')
-    return template.render(nbconfig)
+    download_urls = [
+        ""
+    ]
+    resources.update(nbhtml=nbhtml, 
+                    date=datetime.utcnow().strftime(date_fmt),
+                    **kwargs
+                    )
+    template = j2_env.get_template('static_notebook.html')
+    return template.render(resources)
 
 
 def main():
     fname = sys.argv[1]
     with open(fname, 'rt') as fobj:
         nbjson = fobj.read()
-    print(export_notebook(nbjson))
+    
+    home_icon = "home"
+    home_text = "Home"
+    home_url = "../"
+    
+    static = lambda path: "static/%s" % path
+    css_urls = [ static(f) for f in [
+        "components/Font-Awesome/css/font-awesome.min.css",
+        "css/bootstrap.min.css",
+        "css/bootstrap-responsive.min.css",
+        "css/pygments.css",
+        "css/ipython.min.css",
+        "css/nbviewer.css",
+    ]]
+    js_urls = [ static(f) for f in [
+        "js/jquery.min.js",
+        "js/bootstrap.min.js",
+        "js/bootstrap-collapse.js",
+        "components/requirejs/require.js",
+    ]]
+    js_urls.append("https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS_HTML",
+)
+    downloads = {"Notebook File" : fname, "Notebook File (Again)" : fname}
+    
+    print(export_notebook(nbjson,
+        css_urls=css_urls,
+        js_urls=js_urls,
+        home_icon=home_icon,
+        home_text=home_text,
+        home_url=home_url,
+        downloads=downloads,
+    ))
 
 
 if __name__ == '__main__':

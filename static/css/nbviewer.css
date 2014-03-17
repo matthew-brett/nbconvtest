@@ -26,3 +26,28 @@ pre, code {
     /* restore default mono font */
     font-family: monospace;
 }
+
+/* Footer
+-------------------------------------------------- */
+.footer {
+  margin-top: 45px;
+  padding: 35px 0 36px;
+  border-top: 1px solid #e5e5e5;
+}
+.footer p {
+  margin-bottom: 0;
+  color: #555;
+}
+
+body {
+  position: relative;
+  padding-top: 40px;
+}
+
+@media (max-width: 767px) {
+
+  /* Remove any padding from the body */
+  body {
+    padding-top: 0;
+  }
+}
