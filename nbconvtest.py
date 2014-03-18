@@ -3,7 +3,10 @@
 from __future__ import print_function
 
 import sys
+PY3 = sys.version_info[0] >= 3
+
 from os.path import join as pjoin, split as psplit, abspath, dirname
+import locale
 
 from IPython.config import Config
 from IPython.nbconvert.exporters import HTMLExporter
@@ -21,7 +24,8 @@ def render_notebook(exporter, json_notebook):
     nb = reads_json(json_notebook)
     return exporter.from_notebook_node(nb)
 
-def export_notebook(nbjson, **kwargs):
+
+def export_notebook(nbjson, template, **kwargs):
     # NBConvert config
     config = Config()
     config.HTMLExporter.template_file = 'basic'
@@ -30,21 +34,10 @@ def export_notebook(nbjson, **kwargs):
 
     exporter = HTMLExporter(config=config)
 
-    download_url = None
-    home_url = None
-
     nbhtml, resources = render_notebook(exporter, nbjson)
-
-    from datetime import datetime
-    date_fmt = "%a, %d %h %Y %H:%M:%S UTC"
-    download_urls = [
-        ""
-    ]
-    resources.update(nbhtml=nbhtml, 
-                    date=datetime.utcnow().strftime(date_fmt),
-                    **kwargs
+    resources.update(nbhtml=nbhtml,
+                     **kwargs
                     )
-    template = j2_env.get_template('static_notebook.html')
     return template.render(resources)
 
 
@@ -53,36 +46,29 @@ def main():
     with open(fname, 'rt') as fobj:
         nbjson = fobj.read()
 
-    home_icon = "home"
-    home_text = "Home"
-    home_url = "../"
+    home = dict(icon = 'chevron-left',
+                text = 'Home',
+                url = '../')
 
-    static = lambda path: "static/%s" % path
-    css_urls = [ static(f) for f in [
-        "css/font-awesome.min.css",
-        "css/bootstrap.min.css",
-        "css/bootstrap-responsive.min.css",
-        "css/pygments.css",
-        "css/ipython.min.css",
-        "css/nbviewer.css",
-    ]]
-    js_urls = [ static(f) for f in [
-        "js/jquery.min.js",
-        "js/bootstrap.min.js",
-        "js/bootstrap-collapse.js",
-        "js/require.js",
-    ]]
-    js_urls.append("https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS_HTML")
+    from datetime import datetime
+    date_fmt = "%a, %d %h %Y %H:%M:%S UTC"
+
     downloads = {"Notebook File" : fname, "Notebook File (Again)" : fname}
 
-    print(export_notebook(nbjson,
-        css_urls=css_urls,
-        js_urls=js_urls,
-        home_icon=home_icon,
-        home_text=home_text,
-        home_url=home_url,
-        downloads=downloads,
-    ))
+    template = j2_env.get_template('css_js_notebook.html')
+    html = export_notebook(nbjson,
+                           template,
+                           home = home,
+                           date=datetime.utcnow().strftime(date_fmt),
+                           downloads=downloads)
+    if PY3: # sys.stdout is unicode string stream
+        print(html)
+        return
+    # Python 2 - need to guess encoding if not known
+    std_enc = sys.stdout.encoding
+    if std_enc is None: # often is for pipes
+        std_enc = locale.getdefaultlocale()[1]
+    print(html.encode(std_enc))
 
 
 if __name__ == '__main__':

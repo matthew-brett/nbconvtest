@@ -2,10 +2,10 @@
    <li>
         <a href="{{url}}" title="{{name}}" {%if download %}download{% endif %}>
            {% if icon %}
-               <span class='fa fa-{{icon}} fa-2x menu-icon'></span>
-               <span class='menu-text'>{{name}}</span>
+            <span class='fa fa-{{icon}} fa-2x menu-icon'></span>
+            <span class='menu-text'>{{name}}</span>
            {% else %}
-               <span>{{name}}</span>
+            <span>{{name}}</span>
            {% endif %}
        </a>
    </li>
@@ -30,15 +30,19 @@
     {% else %}
     <meta name="author" content="">
     {% endif %}
-    
+
+    {% block base_css %}
+    {% endblock %}
     {% for css_url in css_urls %}
       <link href="{{css_url}}" rel="stylesheet">
     {% endfor %}
-    
+
+    {% block base_js %}
+    {% endblock %}
     {% for js_url in js_urls %}
       <script src="{{js_url}}" type="text/javascript"></script>
     {% endfor %}
-    
+
     <script type="text/javascript">
     init_mathjax = function() {
         console.log(window.MathJax);
@@ -79,23 +83,41 @@
           </button>
           <div class="nav-collapse collapse">
             <ul class="nav">
-              <li>
-                <a href="{{home_url}}" title="{{home_text}}">
-                 <span class='fa fa-{{home_icon}} fa-2x menu-icon'></span>
-                 <span class='menu-text'>{{home_text}}</span>
-               </a>
-             </li>
+                {{ head_link(home.url, home.text, home.icon) }}
             </ul>
             <ul class="nav pull-right">
-              {% for name, url in downloads.items() %}
+                {% if (downloads | length) == 1 %}
+                {% for name, url in downloads.items() %}
                 <li><a href="{{url}}">{{name}}</a></li>
-              {% endfor %}
+                {% endfor %}
+                {% else %}
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle sr-only"
+                        type="button"
+                        id="download-menu"
+                        data-toggle="dropdown">
+                        Downloads
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu"
+                        role="menu"
+                        aria-labelledby="download-menu">
+                        {% for name, url in downloads.items() %}
+                        <li role="presentation"><a role="menuitem" tabindex="-1"
+                            href="{{url}}">{{name}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
             </ul>
           </div>
         </div>
       </div>
     </div>
     <div class="container">
+
+     <!-- Main body
+     ================================================== -->
 
       {% block nbbody %}
         {{ nbhtml | safe }}
@@ -111,7 +133,6 @@
             Rendered on: {{date}}
         </p>
         {% endif %}
-      </footer>
       </footer>
       {% endblock footer %}
 
