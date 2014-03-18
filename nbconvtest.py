@@ -52,14 +52,14 @@ def main():
     fname = sys.argv[1]
     with open(fname, 'rt') as fobj:
         nbjson = fobj.read()
-    
+
     home_icon = "home"
     home_text = "Home"
     home_url = "../"
-    
+
     static = lambda path: "static/%s" % path
     css_urls = [ static(f) for f in [
-        "components/Font-Awesome/css/font-awesome.min.css",
+        "css/font-awesome.min.css",
         "css/bootstrap.min.css",
         "css/bootstrap-responsive.min.css",
         "css/pygments.css",
@@ -70,12 +70,11 @@ def main():
         "js/jquery.min.js",
         "js/bootstrap.min.js",
         "js/bootstrap-collapse.js",
-        "components/requirejs/require.js",
+        "js/require.js",
     ]]
-    js_urls.append("https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS_HTML",
-)
+    js_urls.append("https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS_HTML")
     downloads = {"Notebook File" : fname, "Notebook File (Again)" : fname}
-    
+
     print(export_notebook(nbjson,
         css_urls=css_urls,
         js_urls=js_urls,
